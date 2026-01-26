@@ -1,4 +1,3 @@
-"""MCP Client for making JSON-RPC calls to MCP server"""
 import requests
 import json
 from typing import Dict, Any, Optional, Callable
@@ -17,17 +16,10 @@ class MCPClient:
         self._available_tools = None
     
     def _emit_status(self, status: str):
-        """Emit status update if callback is provided"""
         if self.status_callback:
             self.status_callback(status)
     
     def list_tools(self) -> Dict[str, Any]:
-        """
-        Get list of available tools from MCP server
-        
-        Returns:
-            Dictionary of available tools with metadata
-        """
         self._emit_status("Querying MCP server for available tools...")
         result = self.call_tool("mcp.list_tools", {})
         
@@ -43,13 +35,11 @@ class MCPClient:
         return self._available_tools
     
     def get_available_tools(self) -> Dict[str, Any]:
-        """Get cached list of available tools"""
         if self._available_tools is None:
             return self.list_tools()
         return self._available_tools
     
     def reload_tools(self) -> Dict[str, Any]:
-        """Request MCP server to reload tools"""
         self._emit_status("Requesting MCP server to reload tools...")
         result = self.call_tool("mcp.reload_tools", {})
         
@@ -60,16 +50,6 @@ class MCPClient:
         return result
     
     def call_tool(self, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Call a tool on the MCP server via JSON-RPC
-        
-        Args:
-            tool_name: Name of the tool to call
-            params: Parameters to pass to the tool
-            
-        Returns:
-            Result from the tool or error dict
-        """
         self.request_id += 1
         
         payload = {

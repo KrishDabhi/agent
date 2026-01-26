@@ -6,7 +6,6 @@ load_dotenv()
 
 # ==================== API Configuration ====================
 GROK_API_KEY = os.getenv("GROK_API_KEY", "")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 # ==================== Model Configuration ====================
 # Text Generation Model (Grok)
