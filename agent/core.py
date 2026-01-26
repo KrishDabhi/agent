@@ -73,7 +73,6 @@ class Agent:
     def _handle_chat(self, message: str) -> dict:
         """
         Handle chat request and return response with metadata
-        
         Returns:
             dict with response, status_updates, and metadata
         """
@@ -195,7 +194,6 @@ class Agent:
     def _select_tool(self, query: str) -> tuple[str, int]:
         """
         Intelligently select the best tool based on query content
-        
         Returns:
             (tool_name, confidence_percentage)
         """
