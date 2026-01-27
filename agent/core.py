@@ -1,8 +1,9 @@
 from mcp.client import MCPClient
-from config import ROUTING_CONFIG
+from config import ROUTING_CONFIG, CONFIDENCE_THRESHOLD
 from typing import Optional, Callable, Dict, Any, List
 import time
 import re
+from formatter import format_text
 
 
 class Agent:
@@ -24,6 +25,27 @@ class Agent:
         if self.status_callback:
             self.status_callback(status)
         print(f"🤖 Agent: {status}")
+    
+    def _extract_content(self, response: str) -> str:
+        """
+        Extract actual content from structured responses.
+        If response is JSON with 'content' field, extract it.
+        Otherwise return the response as-is.
+        """
+        import json
+        try:
+            # Try to parse as JSON
+            data = json.loads(response)
+            
+            # If it's structured output with 'content', extract it
+            if isinstance(data, dict) and 'content' in data:
+                return data['content']
+            
+            # Otherwise return as-is
+            return response
+        except (json.JSONDecodeError, ValueError):
+            # Not JSON, return as-is
+            return response
     
     def _discover_capabilities(self):
         """Discover what tools are available from MCP server"""
@@ -91,7 +113,7 @@ class Agent:
             response = f"I don't have access to the '{selected_tool}' capability. Available capabilities: {', '.join(self.capabilities.keys())}"
             
             return {
-                "response": response,
+                "response": format_text(response),
                 "status_updates": self.status_updates,
                 "metadata": {
                     "tool_used": None,
@@ -112,7 +134,7 @@ class Agent:
                 error_msg = search_result['error']['message']
                 self._emit_status(f"❌ Search failed: {error_msg}")
                 return {
-                    "response": f"Search failed: {error_msg}",
+                    "response": format_text(f"Search failed: {error_msg}"),
                     "status_updates": self.status_updates,
                     "metadata": {
                         "tool_used": "web_search",
@@ -135,11 +157,12 @@ class Agent:
             
             if "error" in structured_result:
                 self._emit_status("⚠️  Failed to structure results, returning raw search data")
-                response = f"Search Results:\n\n{search_data}"
+                response = format_text(f"Search Results:\n\n{search_data}")
             else:
                 structure_time = time.time() - structure_start_time
                 self._emit_status(f"✅ Results structured in {structure_time:.2f}s")
-                response = structured_result["result"]
+                content = self._extract_content(structured_result["result"])
+                response = format_text(content)
             
             self._emit_status("✨ Response ready")
             
@@ -165,7 +188,7 @@ class Agent:
                 error_msg = result['error']['message']
                 self._emit_status(f"❌ Tool execution failed: {error_msg}")
                 return {
-                    "response": f"Tool execution failed: {error_msg}",
+                    "response": format_text(f"Tool execution failed: {error_msg}"),
                     "status_updates": self.status_updates,
                     "metadata": {
                         "tool_used": selected_tool,
@@ -180,8 +203,12 @@ class Agent:
             self._emit_status("✨ Response ready")
             
             total_time = time.time() - start_time
+            
+            # Extract content from structured response
+            content = self._extract_content(result["result"])
+            
             return {
-                "response": result["result"],
+                "response": format_text(content),
                 "status_updates": self.status_updates,
                 "metadata": {
                     "tool_used": selected_tool,
@@ -193,42 +220,76 @@ class Agent:
     
     def _select_tool(self, query: str) -> tuple[str, int]:
         """
-        Intelligently select the best tool based on query content
+        Intelligently select the best tool based on query content with priority weights
         Returns:
             (tool_name, confidence_percentage)
         """
         query_lower = query.lower()
         
-        # Score each tool based on keyword matches
-        scores = {}
+        # Score each tool based on keyword matches with priority weights
+        tool_scores = {}
+        
         for tool_name, config in ROUTING_CONFIG.items():
             # Skip if tool not available
             if tool_name not in self.capabilities:
                 continue
-                
-            score = 0
-            for keyword in config["keywords"]:
-                if keyword in query_lower:
-                    score += 1
-                # Bonus for exact phrase matches
-                if f" {keyword} " in f" {query_lower} ":
-                    score += 2
             
-            scores[tool_name] = score
+            score = 0
+            keyword_matches = 0
+            priority_weight = config.get("priority_weight", 1)
+            
+            for keyword in config["keywords"]:
+                keyword_lower = keyword.lower()
+                
+                # Exact phrase match (highest score)
+                if f" {keyword_lower} " in f" {query_lower} ":
+                    score += 10 * priority_weight
+                    keyword_matches += 1
+                # Keyword at start or end
+                elif query_lower.startswith(keyword_lower) or query_lower.endswith(keyword_lower):
+                    score += 8 * priority_weight
+                    keyword_matches += 1
+                # Contains keyword
+                elif keyword_lower in query_lower:
+                    score += 5 * priority_weight
+                    keyword_matches += 1
+            
+            # Store both score and match count
+            tool_scores[tool_name] = {
+                "score": score,
+                "matches": keyword_matches,
+                "priority": priority_weight
+            }
         
-        # If no tools available, return default
-        if not scores:
-            return "text_generation", 0
-        
-        # Return tool with highest score
-        best_tool = max(scores, key=scores.get)
-        max_score = scores[best_tool]
-        
-        # Calculate confidence percentage (rough heuristic)
-        confidence = min(100, max_score * 20)
-        
-        # Default to text_generation if confidence is too low
-        if confidence < 20:
+        # If no tools available or no matches, fallback
+        if not tool_scores or all(s["score"] == 0 for s in tool_scores.values()):
+            # Default to web_search if available for unknown queries
+            if "web_search" in self.capabilities:
+                return "web_search", 50
             return "text_generation", 50
+        
+        # Find best tool by score
+        best_tool = max(tool_scores, key=lambda t: tool_scores[t]["score"])
+        best_score = tool_scores[best_tool]["score"]
+        best_matches = tool_scores[best_tool]["matches"]
+        
+        # Calculate confidence based on score and number of matches
+        # Base confidence from matches
+        base_confidence = min(100, best_matches * 25)
+        # Boost from score
+        score_boost = min(40, best_score // 2)
+        confidence = min(100, base_confidence + score_boost)
+        
+        # Check confidence threshold
+        if confidence < CONFIDENCE_THRESHOLD:
+            self._emit_status(f"⚠️  Confidence {confidence}% below threshold {CONFIDENCE_THRESHOLD}%")
+            
+            # Intelligent fallback: use web_search for real-time queries
+            if "web_search" in self.capabilities:
+                self._emit_status(f"🔄 Falling back to web_search for better results")
+                return "web_search", confidence
+            else:
+                self._emit_status(f"🔄 Falling back to text_generation")
+                return "text_generation", 60
         
         return best_tool, confidence

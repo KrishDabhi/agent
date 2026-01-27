@@ -30,22 +30,57 @@ ENABLED_TOOLS = [
 
 # ==================== Routing Keywords ====================
 ROUTING_CONFIG = {
-    "text_generation": {
-        "keywords": ["explain", "what is", "how does", "why", "difference between", 
-                     "concept", "theory", "protocol", "detail", "describe", "tell me about"],
-        "model": TEXT_GENERATION_MODEL
+    "web_search": {
+        "keywords": [
+            # Booking-related
+            "book", "booking", "reserve", "reservation", "ticket", "tickets",
+            # Travel-related
+            "flight", "flights", "airline", "airlines", "fly", "flying",
+            "train", "trains", "railway", "metro", "bus", "buses",
+            "hotel", "hotels", "accommodation", "stay",
+            "travel", "trip", "journey", "destination",
+            # Real-time & current info
+            "current", "latest", "today", "now", "real-time", "recent", "update", "updates",
+            "news", "trending", "happening", "live",
+            # Prices & shopping
+            "price", "prices", "cost", "costs", "buy", "purchase", "shop", "shopping",
+            "deal", "deals", "offer", "offers", "discount",
+            # Location & time-sensitive
+            "weather", "forecast", "temperature",
+            "tomorrow", "next week", "schedule", "timing", "when",
+            # Queries requiring fresh data
+            "find", "search for", "look for", "locate", "where can i",
+            "best", "top", "compare", "comparison"
+        ],
+        "priority_weight": 3,  # High priority for these keywords
+        "engine": "duckduckgo"
     },
     "code_generation": {
-        "keywords": ["write code", "generate code", "implement", "coding", "programming", 
-                     "script", "function", "algorithm", "create a", "build a"],
+        "keywords": [
+            "write code", "generate code", "implement", "coding", "programming",
+            "script", "function", "class", "method", "algorithm",
+            "create a", "build a", "develop", "code for",
+            "python", "javascript", "java", "c++", "sql",
+            "debug", "fix code", "refactor",
+            "api", "endpoint", "database query"
+        ],
+        "priority_weight": 2,  # Medium-high priority
         "model": CODE_GENERATION_MODEL
     },
-    "web_search": {
-        "keywords": ["current", "latest", "today", "now", "price", "weather", "news", 
-                     "trending", "real-time", "recent", "happening", "update"],
-        "engine": "duckduckgo"
+    "text_generation": {
+        "keywords": [
+            "explain", "what is", "how does", "why", "difference between",
+            "concept", "theory", "protocol", "detail", "describe",
+            "tell me about", "define", "meaning", "understand",
+            "tutorial", "learn", "teach me", "guide"
+        ],
+        "priority_weight": 1,  # Lower priority - fallback option
+        "model": TEXT_GENERATION_MODEL
     }
 }
+
+# Confidence threshold - don't use tool if confidence below this
+CONFIDENCE_THRESHOLD = 70
 
 # ==================== Server Configuration ====================
 SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")

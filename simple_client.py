@@ -1,9 +1,15 @@
 """
 Enhanced Interactive Client with Status Updates
 """
+import sys
+import io
+
+# Fix Windows encoding issue for colored output
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 import requests
 import json
-import sys
 from datetime import datetime
 
 BASE_URL = "http://localhost:5000"
