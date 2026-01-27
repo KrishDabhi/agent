@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ==================== API Configuration ====================
-GROK_API_KEY = os.getenv("GROK_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 # ==================== Model Configuration ====================
 # Text Generation Model (Grok)
-TEXT_GENERATION_MODEL = os.getenv("TEXT_GENERATION_MODEL", "grok-beta")
+TEXT_GENERATION_MODEL = os.getenv("TEXT_GENERATION_MODEL", "groq-beta")
 TEXT_GENERATION_TEMPERATURE = float(os.getenv("TEXT_GENERATION_TEMPERATURE", "0.7"))
 TEXT_GENERATION_MAX_TOKENS = int(os.getenv("TEXT_GENERATION_MAX_TOKENS", "1000"))
 
