@@ -68,6 +68,34 @@ class Agent:
         self.mcp.reload_tools()
         self._discover_capabilities()
     
+    def _handle_conversational(self, message: str) -> Optional[str]:
+        """
+        Handle conversational queries like greetings, gratitude, very short queries
+        Returns response string if conversational, None if needs tool
+        """
+        msg_lower = message.lower().strip()
+        
+        # Greetings
+        greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy"]
+        if msg_lower in greetings:
+            return "Hello! I'm an intelligent agent that can help you with:\n\n- **Web searches** for flights, trains, bookings, news, and real-time information\n- **Code generation** for programming tasks\n- **Explanations** of concepts and topics\n\nWhat can I help you with today?"
+        
+        # Gratitude
+        thanks = ["thanks", "thank you", "thx", "ty", "appreciate it", "thank you so much"]
+        if msg_lower in thanks:
+            return "You're welcome! Let me know if you need anything else!"
+        
+        # Very short or unclear queries - ask for clarification
+        if len(message.strip()) <= 2:
+            return "I need a bit more information. Could you please provide more details about what you're looking for?"
+        
+        # Single words that are too vague
+        vague_words = ["help", "please", "ok", "okay", "yes", "no"]
+        if msg_lower in vague_words:
+            return "I'm here to help! Could you please tell me what you need assistance with?"
+        
+        return None
+    
     def handle_user_request(self, method: str, params: dict) -> dict:
         # Clear status updates for new request
         self.status_updates = []
@@ -101,6 +129,19 @@ class Agent:
         start_time = time.time()
         
         self._emit_status("💭 Thinking... analyzing your request")
+        
+        # Check for conversational queries first (greetings, thanks, etc.)
+        conv_response = self._handle_conversational(message)
+        if conv_response:
+            return {
+                "response": format_text(conv_response),
+                "status_updates": self.status_updates,
+                "metadata": {
+                    "tool_used": "conversational",
+                    "confidence": 100,
+                    "total_time": time.time() - start_time
+                }
+            }
         
         # Step 1: Determine best tool
         selected_tool, confidence = self._select_tool(message)

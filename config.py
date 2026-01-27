@@ -48,23 +48,31 @@ ROUTING_CONFIG = {
             # Location & time-sensitive
             "weather", "forecast", "temperature",
             "tomorrow", "next week", "schedule", "timing", "when",
-            # Queries requiring fresh data
-            "find", "search for", "look for", "locate", "where can i",
-            "best", "top", "compare", "comparison"
+            # Queries requiring fresh data  
+            "find hotels", "find flights", "search for flights", "look for tickets",
+            "locate hotels", "where can i book",
+            "best hotels", "best flights", "top restaurants", "compare prices"
         ],
-        "priority_weight": 3,  # High priority for these keywords
+        "priority_weight": 2,  # Medium priority
         "engine": "duckduckgo"
     },
     "code_generation": {
         "keywords": [
-            "write code", "generate code", "implement", "coding", "programming",
-            "script", "function", "class", "method", "algorithm",
-            "create a", "build a", "develop", "code for",
-            "python", "javascript", "java", "c++", "sql",
-            "debug", "fix code", "refactor",
-            "api", "endpoint", "database query"
+            # Strong code indicators
+            "write code", "write the code", "generate code", "create code", "make code",
+            "code for", "code to", "write the", "make the",
+            # Implementation
+            "implement", "implementation", "develop", "build a", "create a",
+            "coding", "programming", "script", "function", "class", "method", "algorithm",
+            # Languages
+            "python", "javascript", "java", "c++", "sql", "typescript",
+            # Code-specific
+            "debug", "fix code", "refactor", "optimize",
+            "api", "endpoint", "database query",
+            # Advanced terms
+            "rag", "machine learning", "neural network"
         ],
-        "priority_weight": 2,  # Medium-high priority
+        "priority_weight": 3,  # HIGHEST - code overrides everything!
         "model": CODE_GENERATION_MODEL
     },
     "text_generation": {
