@@ -265,64 +265,17 @@ class Agent:
     
     def _select_tool(self, query: str) -> tuple[str, int]:
         """
-        Intelligently select the best tool using LLM-based query analysis
+        Intelligently select the best tool based on query content with priority weights
         Returns:
             (tool_name, confidence_percentage)
         """
-        try:
-            # Use LLM to analyze query and recommend tool
-            available_tools = list(self.capabilities.keys())
-            
-            if not available_tools:
-                return "text_generation", 0
-            
-            # Get LLM recommendation
-            tool, confidence, reasoning = self.query_analyzer.get_tool_with_confidence(
-                query, available_tools
-            )
-            
-            # Show reasoning in status
-            self._emit_status(f"💡 LLM Analysis: {reasoning[:80]}...")
-            
-            # Validate tool is available
-            if tool not in self.capabilities:
-                self._emit_status(f"⚠️  LLM recommended unavailable tool {tool}, using fallback")
-                tool = available_tools[0] if available_tools else "text_generation"
-                confidence = 50
-            
-            # Check confidence threshold
-            if confidence < CONFIDENCE_THRESHOLD:
-                self._emit_status(f"⚠️  Confidence {confidence}% below threshold {CONFIDENCE_THRESHOLD}%")
-                
-                # Intelligent fallback based on query content
-                needs_realtime = any(word in query.lower() for word in [
-                    "latest", "current", "now", "today", "recent", "news",
-                    "book", "booking", "buy", "price", "find", "search", 
-                    "flight", "train", "hotel", "ticket", "weather"
-                ])
-                
-                if needs_realtime and "web_search" in self.capabilities:
-                    self._emit_status(f"🔄 Query needs real-time data, using web_search")
-                    return "web_search", confidence
-                else:
-                    self._emit_status(f"✓ Using {tool} despite low confidence")
-                    return tool, max(confidence, 60)
-            
-            return tool, confidence
-            
-        except Exception as e:
-            # Fallback to keyword-based routing if LLM fails
-            self._emit_status(f"⚠️  LLM routing failed: {str(e)[:50]}, using keyword fallback")
-            return self._select_tool_fallback(query)
-    
-    def _select_tool_fallback(self, query: str) -> tuple[str, int]:
-        """
-        Fallback keyword-based tool selection (used if LLM fails)
-        """
         query_lower = query.lower()
+        
+        # Score each tool based on keyword matches with priority weights
         tool_scores = {}
         
         for tool_name, config in ROUTING_CONFIG.items():
+            # Skip if tool not available
             if tool_name not in self.capabilities:
                 continue
             
@@ -332,59 +285,56 @@ class Agent:
             
             for keyword in config["keywords"]:
                 keyword_lower = keyword.lower()
+                
+                # Exact phrase match (highest score)
                 if f" {keyword_lower} " in f" {query_lower} ":
                     score += 10 * priority_weight
                     keyword_matches += 1
+                # Keyword at start or end
                 elif query_lower.startswith(keyword_lower) or query_lower.endswith(keyword_lower):
                     score += 8 * priority_weight
                     keyword_matches += 1
+                # Contains keyword
                 elif keyword_lower in query_lower:
                     score += 5 * priority_weight
                     keyword_matches += 1
             
-            tool_scores[tool_name] = {"score": score, "matches": keyword_matches}
+            # Store both score and match count
+            tool_scores[tool_name] = {
+                "score": score,
+                "matches": keyword_matches,
+                "priority": priority_weight
+            }
         
+        # If no tools available or no matches, fallback
         if not tool_scores or all(s["score"] == 0 for s in tool_scores.values()):
+            # Default to web_search if available for unknown queries
+            if "web_search" in self.capabilities:
+                return "web_search", 50
             return "text_generation", 50
         
+        # Find best tool by score
         best_tool = max(tool_scores, key=lambda t: tool_scores[t]["score"])
-        confidence = min(100, tool_scores[best_tool]["matches"] * 25)
+        best_score = tool_scores[best_tool]["score"]
+        best_matches = tool_scores[best_tool]["matches"]
         
-        return best_tool, confidence
-    
-    def _select_tool_fallback(self, query: str) -> tuple[str, int]:
-        """
-        Fallback keyword-based tool selection (used if LLM fails)
-        """
-        query_lower = query.lower()
-        tool_scores = {}
+        # Calculate confidence based on score and number of matches
+        # Base confidence from matches
+        base_confidence = min(100, best_matches * 25)
+        # Boost from score
+        score_boost = min(40, best_score // 2)
+        confidence = min(100, base_confidence + score_boost)
         
-        for tool_name, config in ROUTING_CONFIG.items():
-            if tool_name not in self.capabilities:
-                continue
+        # Check confidence threshold
+        if confidence < CONFIDENCE_THRESHOLD:
+            self._emit_status(f"⚠️  Confidence {confidence}% below threshold {CONFIDENCE_THRESHOLD}%")
             
-            score = 0
-            keyword_matches = 0
-            priority_weight = config.get("priority_weight", 1)
-            
-            for keyword in config["keywords"]:
-                keyword_lower = keyword.lower()
-                if f" {keyword_lower} " in f" {query_lower} ":
-                    score += 10 * priority_weight
-                    keyword_matches += 1
-                elif query_lower.startswith(keyword_lower) or query_lower.endswith(keyword_lower):
-                    score += 8 * priority_weight
-                    keyword_matches += 1
-                elif keyword_lower in query_lower:
-                    score += 5 * priority_weight
-                    keyword_matches += 1
-            
-            tool_scores[tool_name] = {"score": score, "matches": keyword_matches}
-        
-        if not tool_scores or all(s["score"] == 0 for s in tool_scores.values()):
-            return "text_generation", 50
-        
-        best_tool = max(tool_scores, key=lambda t: tool_scores[t]["score"])
-        confidence = min(100, tool_scores[best_tool]["matches"] * 25)
+            # Intelligent fallback: use web_search for real-time queries
+            if "web_search" in self.capabilities:
+                self._emit_status(f"🔄 Falling back to web_search for better results")
+                return "web_search", confidence
+            else:
+                self._emit_status(f"🔄 Falling back to text_generation")
+                return "text_generation", 60
         
         return best_tool, confidence
