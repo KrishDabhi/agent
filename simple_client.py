@@ -1,6 +1,3 @@
-"""
-Enhanced Interactive Client with Status Updates
-"""
 import sys
 import io
 

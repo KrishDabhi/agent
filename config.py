@@ -49,7 +49,7 @@ ROUTING_CONFIG = {
             "weather", "forecast", "temperature",
             "tomorrow", "next week", "schedule", "timing", "when",
             # Queries requiring fresh data  
-            "find hotels", "find flights", "search for flights", "look for tickets",
+            "find", "find hotels", "find flights", "search for flights", "look for tickets",
             "locate hotels", "where can i book",
             "best hotels", "best flights", "top restaurants", "compare prices"
         ],

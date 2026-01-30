@@ -1,7 +1,3 @@
-"""
-JSON-RPC Communication Monitor
-Real-time display of all JSON-RPC requests and responses
-"""
 import json
 import os
 from datetime import datetime

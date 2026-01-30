@@ -1,6 +1,6 @@
 import requests
 import json
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from typing import List, Dict
 from config import WEB_SEARCH_MAX_RESULTS
 

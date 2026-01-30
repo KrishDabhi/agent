@@ -1,7 +1,3 @@
-"""
-Rich Text Formatter for CLI Output
-Converts markdown-style formatting to ANSI-colored terminal output
-"""
 import re
 from typing import List, Tuple
 
