@@ -5,14 +5,13 @@ from typing import List, Dict
 from config import WEB_SEARCH_MAX_RESULTS
 
 TOOL_NAME = "web_search"
-TOOL_DESCRIPTION = "Search the web for current information using DuckDuckGo with structured output"
+TOOL_DESCRIPTION = "Search the web for current information using Live Web Search feature with structured output"
 TOOL_PARAMETERS = {
     "query": "The search query",
-    "structured_output": "(Optional) Set to 'true' for JSON formatted response with metadata. Default: 'true'"
+    "structured_output": "Set to 'true' for JSON formatted response with metadata. Default: 'true'"
 }
 
 def execute(params: dict) -> str:
-    """Perform web search using DuckDuckGo with structured output"""
     query = params.get("query", "")
     structured_output = params.get("structured_output", "true").lower() == "true"
     
@@ -24,7 +23,6 @@ def execute(params: dict) -> str:
             results = list(ddgs.text(query, max_results=WEB_SEARCH_MAX_RESULTS))
             
             if structured_output:
-                # Return structured JSON output
                 structured_results = []
                 for i, r in enumerate(results, 1):
                     structured_results.append({

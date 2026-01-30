@@ -10,10 +10,10 @@ from config import (
 )
 
 TOOL_NAME = "code_generation"
-TOOL_DESCRIPTION = "Generate code snippets and programming solutions using Groq AI with structured output"
+TOOL_DESCRIPTION = "Generate code snippets and programming solutions with structured output"
 TOOL_PARAMETERS = {
     "prompt": "Description of the code to generate",
-    "structured_output": "(Optional) Set to 'true' for JSON formatted response with metadata. Default: 'true'"
+    "structured_output": "Set to 'true' for JSON formatted response with metadata. Default: 'true'"
 }
 
 def extract_code_blocks(content: str) -> list:
@@ -24,7 +24,6 @@ def extract_code_blocks(content: str) -> list:
     return [{"language": lang or "unknown", "code": code.strip()} for lang, code in matches]
 
 def execute(params: dict) -> str:
-    """Generate code using Groq API with structured output"""
     prompt = params.get("prompt", "")
     structured_output = params.get("structured_output", "true").lower() == "true"
     

@@ -9,15 +9,14 @@ from config import (
 )
 
 TOOL_NAME = "text_generation"
-TOOL_DESCRIPTION = "Generate detailed text explanations and answers using Groq AI with structured output"
+TOOL_DESCRIPTION = "Generate detailed text explanations and answers with structured output"
 TOOL_PARAMETERS = {
     "prompt": "The text prompt or question to generate a response for",
-    "structured_output": "(Optional) Set to 'true' for JSON formatted response with metadata. Default: 'true'"
+    "structured_output": "Set to 'true' for JSON formatted response with metadata. Default: 'true'"
 }
 
 
 def execute(params: dict) -> str:
-    """Generate detailed explanations using Groq API with structured output"""
     prompt = params.get("prompt", "")
     structured_output = params.get("structured_output", "true").lower() == "true"
     
