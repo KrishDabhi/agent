@@ -10,8 +10,6 @@ The agent uses **Groq LLM** to intelligently analyze each query and determine th
 3. **Smart Fallback:** Uses keyword matching if LLM fails
 
 ## Accuracy
-**Overall: 100% Success Rate** ✅ (Previously 78.6% with keywords)
-
 | Category | Accuracy | Improvement |
 |----------|----------|-------------|
 | Code Generation | 100% ✅ | Was 100% |
