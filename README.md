@@ -125,5 +125,3 @@ python simple_client.py
 4. Consider ML-based intent classification
 
 ---
-
-**Honest Assessment:** The agent works well for code generation and travel/booking queries (85-100%), but needs improvement for educational queries (30%). Not perfect, but functional for most use cases.
