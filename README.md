@@ -1,4 +1,4 @@
-# Intelligent Agent - README
+# Intelligent Agent
 
 ## Architecture
 
