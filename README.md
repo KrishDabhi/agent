@@ -3,7 +3,7 @@
 ## Architecture
 
 ### LLM-Powered AI Agent
-The agent uses **Groq LLM** to intelligently analyze each query and determine the best suitable tool with reasoning and route the query to it:
+The agent uses **LLM** to intelligently analyze each query and determine the what is the best suitable tool with reasoning and route the query to it:
 
 1. **Query Analysis:** LLM examines user intent
 2. **Tool Recommendation:** Returns tool + confidence (0-100) + reasoning
